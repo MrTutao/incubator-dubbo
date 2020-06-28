@@ -33,13 +33,15 @@ import static org.apache.dubbo.common.config.configcenter.AbstractDynamicConfigu
 import static org.apache.dubbo.common.config.configcenter.AbstractDynamicConfiguration.THREAD_POOL_PREFIX_PARAM_NAME;
 import static org.apache.dubbo.common.config.configcenter.AbstractDynamicConfiguration.THREAD_POOL_SIZE_PARAM_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * {@link AbstractDynamicConfiguration} Test
  *
- * @since 2.7.4
+ * @since 2.7.5
  */
 public class AbstractDynamicConfigurationTest {
 
@@ -105,30 +107,13 @@ public class AbstractDynamicConfigurationTest {
 
     @Test
     public void testPublishConfig() {
-        assertThrows(UnsupportedOperationException.class, () -> configuration.publishConfig(null, null), "No support");
-        assertThrows(UnsupportedOperationException.class, () -> configuration.publishConfig(null, null, null), "No support");
-    }
-
-    @Test
-    public void testRemoveConfig() {
-        assertThrows(UnsupportedOperationException.class, () -> configuration.removeConfig(null), "No support");
-        assertThrows(UnsupportedOperationException.class, () -> configuration.removeConfig(null, null), "No support");
-    }
-
-    @Test
-    public void testGetConfigGroups() {
-        assertThrows(UnsupportedOperationException.class, () -> configuration.getConfigGroups(), "No support");
+        assertFalse(configuration.publishConfig(null, null));
+        assertFalse(configuration.publishConfig(null, null, null));
     }
 
     @Test
     public void testGetConfigKeys() {
-        assertThrows(UnsupportedOperationException.class, () -> configuration.getConfigKeys(null), "No support");
-    }
-
-    @Test
-    public void testGetConfigs() {
-        assertThrows(UnsupportedOperationException.class, () -> configuration.getConfigs(null), "No support");
-        assertThrows(UnsupportedOperationException.class, () -> configuration.getConfigs(null, 1000), "No support");
+        assertTrue(configuration.getConfigKeys(null).isEmpty());
     }
 
     @Test

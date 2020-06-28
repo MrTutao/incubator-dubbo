@@ -24,10 +24,10 @@ import org.apache.dubbo.metadata.MetadataService;
 import org.apache.dubbo.metadata.WritableMetadataService;
 import org.apache.dubbo.metadata.definition.ServiceDefinitionBuilder;
 import org.apache.dubbo.metadata.definition.model.ServiceDefinition;
+import org.apache.dubbo.rpc.support.ProtocolUtils;
 
 import com.google.gson.Gson;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.SortedSet;
@@ -44,6 +44,7 @@ import static org.apache.dubbo.common.URL.buildKey;
 import static org.apache.dubbo.common.constants.CommonConstants.INTERFACE_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.PROTOCOL_KEY;
 import static org.apache.dubbo.common.utils.CollectionUtils.isEmpty;
+import static org.apache.dubbo.rpc.Constants.GENERIC_KEY;
 
 /**
  * The {@link WritableMetadataService} implementation stores the metadata of Dubbo services in memory locally when they
@@ -85,8 +86,19 @@ public class InMemoryWritableMetadataService implements WritableMetadataService 
         return getAllUnmodifiableServiceURLs(subscribedServiceURLs);
     }
 
-    SortedSet<String> getAllUnmodifiableServiceURLs(Map<String, SortedSet<URL>> serviceURLs) {
-        return MetadataService.toSortedStrings(serviceURLs.values().stream().flatMap(Collection::stream));
+    private SortedSet<String> getAllUnmodifiableServiceURLs(Map<String, SortedSet<URL>> serviceURLs) {
+        SortedSet<URL> bizURLs = new TreeSet<>(InMemoryWritableMetadataService.URLComparator.INSTANCE);
+        for (Map.Entry<String, SortedSet<URL>> entry : serviceURLs.entrySet()) {
+            SortedSet<URL> urls = entry.getValue();
+            if (urls != null) {
+                for (URL url : urls) {
+                    if (!MetadataService.class.getName().equals(url.getServiceInterface())) {
+                        bizURLs.add(url);
+                    }
+                }
+            }
+        }
+        return MetadataService.toSortedStrings(bizURLs);
     }
 
     @Override
@@ -122,7 +134,8 @@ public class InMemoryWritableMetadataService implements WritableMetadataService 
     public void publishServiceDefinition(URL providerUrl) {
         try {
             String interfaceName = providerUrl.getParameter(INTERFACE_KEY);
-            if (StringUtils.isNotEmpty(interfaceName)) {
+            if (StringUtils.isNotEmpty(interfaceName)
+                    && !ProtocolUtils.isGeneric(providerUrl.getParameter(GENERIC_KEY))) {
                 Class interfaceClass = Class.forName(interfaceName);
                 ServiceDefinition serviceDefinition = ServiceDefinitionBuilder.build(interfaceClass);
                 Gson gson = new Gson();
@@ -130,7 +143,7 @@ public class InMemoryWritableMetadataService implements WritableMetadataService 
                 serviceDefinitions.put(providerUrl.getServiceKey(), data);
                 return;
             }
-            logger.error("publishProvider interfaceName is empty . providerUrl: " + providerUrl.toFullString());
+            logger.info("publishProvider interfaceName is empty . providerUrl: " + providerUrl.toFullString());
         } catch (ClassNotFoundException e) {
             //ignore error
             logger.error("publishProvider getServiceDescriptor error. providerUrl: " + providerUrl.toFullString(), e);

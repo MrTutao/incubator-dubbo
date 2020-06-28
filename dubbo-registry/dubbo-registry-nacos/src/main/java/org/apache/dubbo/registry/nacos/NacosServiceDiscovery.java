@@ -1,4 +1,4 @@
-package org.apache.dubbo.registry.nacos;/*
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,6 +14,7 @@ package org.apache.dubbo.registry.nacos;/*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.dubbo.registry.nacos;
 
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.function.ThrowableFunction;
@@ -44,7 +45,7 @@ import static org.apache.dubbo.registry.nacos.util.NacosNamingServiceUtils.toIns
  * Nacos {@link ServiceDiscovery} implementation
  *
  * @see ServiceDiscovery
- * @since 2.7.4
+ * @since 2.7.5
  */
 public class NacosServiceDiscovery implements ServiceDiscovery {
 

@@ -24,7 +24,6 @@ import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.dubbo.metadata.WritableMetadataService;
 import org.apache.dubbo.metadata.definition.ServiceDefinitionBuilder;
 import org.apache.dubbo.metadata.definition.model.FullServiceDefinition;
-import org.apache.dubbo.metadata.definition.model.ServiceDefinition;
 import org.apache.dubbo.metadata.report.MetadataReport;
 import org.apache.dubbo.metadata.report.MetadataReportInstance;
 import org.apache.dubbo.metadata.report.identifier.MetadataIdentifier;
@@ -45,6 +44,7 @@ import static org.apache.dubbo.common.constants.CommonConstants.GROUP_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.INTERFACE_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.PID_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.PROVIDER_SIDE;
+import static org.apache.dubbo.common.constants.CommonConstants.SIDE_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.TIMESTAMP_KEY;
 import static org.apache.dubbo.common.constants.CommonConstants.VERSION_KEY;
 
@@ -71,31 +71,20 @@ public class RemoteWritableMetadataService implements WritableMetadataService {
     }
 
     @Override
-    public void publishServiceDefinition(URL providerUrl) {
-        try {
-            String interfaceName = providerUrl.getParameter(INTERFACE_KEY);
-            if (StringUtils.isNotEmpty(interfaceName)) {
-                Class interfaceClass = Class.forName(interfaceName);
-                ServiceDefinition serviceDefinition = ServiceDefinitionBuilder.build(interfaceClass);
-                getMetadataReport().storeProviderMetadata(new MetadataIdentifier(providerUrl.getServiceInterface(),
-                        providerUrl.getParameter(VERSION_KEY), providerUrl.getParameter(GROUP_KEY),
-                        null, null), serviceDefinition);
-                return;
-            }
-            logger.error("publishProvider interfaceName is empty . providerUrl: " + providerUrl.toFullString());
-        } catch (ClassNotFoundException e) {
-            //ignore error
-            logger.error("publishProvider getServiceDescriptor error. providerUrl: " + providerUrl.toFullString(), e);
+    public void publishServiceDefinition(URL url) {
+        String side = url.getParameter(SIDE_KEY);
+        if (PROVIDER_SIDE.equalsIgnoreCase(side)) {
+            //TODO, the params part is duplicate with that stored by exportURL(url), can be further optimized in the future.
+            publishProvider(url);
+        } else {
+            //TODO, only useful for ops showing the url parameters, this is duplicate with subscribeURL(url), can be removed in the future.
+            publishConsumer(url);
         }
-
-        // backward compatibility
-        publishProvider(providerUrl);
     }
 
-    @Deprecated
-    public void publishProvider(URL providerUrl) throws RpcException {
+    private void publishProvider(URL providerUrl) throws RpcException {
         //first add into the list
-        // remove the individul param
+        // remove the individual param
         providerUrl = providerUrl.removeParameters(PID_KEY, TIMESTAMP_KEY, Constants.BIND_IP_KEY,
                 Constants.BIND_PORT_KEY, TIMESTAMP_KEY);
 
@@ -117,8 +106,7 @@ public class RemoteWritableMetadataService implements WritableMetadataService {
         }
     }
 
-    @Deprecated
-    public void publishConsumer(URL consumerURL) throws RpcException {
+    private void publishConsumer(URL consumerURL) throws RpcException {
         consumerURL = consumerURL.removeParameters(PID_KEY, TIMESTAMP_KEY, Constants.BIND_IP_KEY,
                 Constants.BIND_PORT_KEY, TIMESTAMP_KEY);
         getMetadataReport().storeConsumerMetadata(new MetadataIdentifier(consumerURL.getServiceInterface(),
@@ -128,6 +116,7 @@ public class RemoteWritableMetadataService implements WritableMetadataService {
 
     @Override
     public boolean exportURL(URL url) {
+        // do nothing for one single url export, the actual report will be done in callback (refreshMetadata) after all urls are exported.
         return true;
     }
 
@@ -141,11 +130,13 @@ public class RemoteWritableMetadataService implements WritableMetadataService {
 
     @Override
     public boolean subscribeURL(URL url) {
+        // do nothing for one single url export, the actual report will be done in callback (refreshMetadata) after all urls are exported.
         return true;
     }
 
     @Override
     public boolean unsubscribeURL(URL url) {
+        // do nothing for one single url export, the actual report will be done in callback (refreshMetadata) after all urls are exported.
         return true;
     }
 
